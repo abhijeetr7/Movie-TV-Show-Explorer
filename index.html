@@ -1,0 +1,1030 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Movie & TV Show Explorer</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #1a202c; /* Dark background */
+            color: #e2e8f0; /* Light text */
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1rem;
+        }
+        .movie-card {
+            background-color: #2d3748; /* Slightly lighter dark background for cards */
+            border-radius: 0.75rem; /* rounded-xl */
+            overflow: hidden;
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            height: 100%; /* Ensure cards take full height in grid */
+        }
+        .movie-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.3);
+        }
+        .movie-card img {
+            width: 100%;
+            height: 300px; /* Fixed height for posters */
+            object-fit: cover;
+            border-top-left-radius: 0.75rem;
+            border-top-right-radius: 0.75rem;
+        }
+        .movie-card-content {
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1; /* Allows content to grow and push buttons to bottom */
+        }
+        .movie-card-title {
+            font-size: 1.25rem; /* text-xl */
+            font-weight: 600; /* font-semibold */
+            margin-bottom: 0.5rem;
+            line-height: 1.3;
+        }
+        .movie-card-rating {
+            display: flex;
+            align-items: center;
+            margin-bottom: 0.5rem;
+            color: #ecc94b; /* Yellow star color */
+        }
+        .movie-card-rating svg {
+            width: 1em;
+            height: 1em;
+            margin-right: 0.25rem;
+        }
+        .movie-card-overview {
+            font-size: 0.875rem; /* text-sm */
+            color: #a0aec0; /* Light gray text */
+            flex-grow: 1; /* Allows overview to take available space */
+            margin-bottom: 1rem; /* Space before buttons */
+            display: -webkit-box;
+            -webkit-line-clamp: 3; /* Limit overview to 3 lines */
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem; /* rounded-lg */
+            font-weight: 600; /* font-semibold */
+            transition: background-color 0.2s ease-in-out;
+            cursor: pointer;
+            text-align: center;
+        }
+        .btn-primary {
+            background-color: #63b3ed; /* Blue */
+            color: #1a202c; /* Dark text */
+        }
+        .btn-primary:hover {
+            background-color: #4299e1; /* Darker blue */
+        }
+        .btn-secondary {
+            background-color: #a0aec0; /* Gray */
+            color: #1a202c; /* Dark text */
+        }
+        .btn-secondary:hover {
+            background-color: #718096; /* Darker gray */
+        }
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed; /* Stay in place */
+            z-index: 1000; /* Sit on top */
+            left: 0;
+            top: 0;
+            width: 100%; /* Full width */
+            height: 100%; /* Full height */
+            overflow: auto; /* Enable scroll if needed */
+            background-color: rgba(0, 0, 0, 0.8); /* Black w/ opacity */
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-content {
+            background-color: #2d3748;
+            margin: auto;
+            padding: 2rem;
+            border-radius: 0.75rem;
+            width: 90%;
+            max-width: 800px;
+            position: relative;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+        .close-button {
+            color: #e2e8f0;
+            position: absolute;
+            top: 1rem;
+            right: 1.5rem;
+            font-size: 2rem;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .close-button:hover,
+        .close-button:focus {
+            color: #cbd5e0;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        .modal-poster {
+            width: 100%;
+            max-height: 400px;
+            object-fit: contain;
+            border-radius: 0.5rem;
+        }
+        .modal-title {
+            font-size: 2.25rem; /* text-4xl */
+            font-weight: 700; /* font-bold */
+            color: #63b3ed;
+        }
+        .modal-rating {
+            font-size: 1.25rem; /* text-xl */
+            color: #ecc94b;
+            display: flex;
+            align-items: center;
+        }
+        .modal-rating svg {
+            width: 1.25em;
+            height: 1.25em;
+            margin-right: 0.5rem;
+        }
+        .modal-overview {
+            font-size: 1rem;
+            line-height: 1.6;
+            color: #a0aec0;
+        }
+        .modal-trailer-container {
+            position: relative;
+            width: 100%;
+            padding-bottom: 56.25%; /* 16:9 Aspect Ratio */
+            height: 0;
+            overflow: hidden;
+            border-radius: 0.5rem;
+        }
+        .modal-trailer-container iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        .watchlist-button {
+            background-color: #48bb78; /* Green */
+            color: #1a202c;
+            margin-top: auto; /* Pushes button to the bottom of the card */
+        }
+        .watchlist-button:hover {
+            background-color: #38a169; /* Darker green */
+        }
+        .remove-watchlist-button {
+            background-color: #e53e3e; /* Red */
+            color: #1a202c;
+        }
+        .remove-watchlist-button:hover {
+            background-color: #c53030; /* Darker red */
+        }
+        .loading-indicator {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            font-size: 1.25rem;
+            color: #63b3ed;
+            padding: 2rem;
+        }
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid #63b3ed;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .error-message {
+            background-color: #e53e3e; /* Red */
+            color: white;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        /* Responsive adjustments */
+        @media (min-width: 768px) {
+            .movie-card img {
+                height: 350px; /* Slightly taller on medium screens */
+            }
+            .modal-content {
+                flex-direction: row;
+                align-items: flex-start;
+            }
+            .modal-poster {
+                width: 40%;
+                max-height: none;
+                object-fit: cover;
+            }
+            .modal-details {
+                width: 60%;
+                padding-left: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-100 min-h-screen flex flex-col">
+    <header class="bg-gray-800 shadow-lg py-4">
+        <div class="container flex flex-col md:flex-row items-center justify-between gap-4">
+            <h1 class="text-3xl font-bold text-blue-400">Movie & TV Explorer</h1>
+            <div class="flex flex-col sm:flex-row items-center gap-4 w-full md:w-auto">
+                <div class="relative w-full sm:w-auto">
+                    <input type="text" id="search-input" placeholder="Search movies or TV shows..."
+                           class="w-full sm:w-64 p-3 rounded-lg bg-gray-700 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-100 placeholder-gray-400">
+                    <button id="search-button"
+                            class="absolute right-0 top-0 h-full px-4 rounded-r-lg bg-blue-500 text-white font-semibold hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        Search
+                    </button>
+                </div>
+                <select id="media-type-select"
+                        class="p-3 rounded-lg bg-gray-700 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-100 w-full sm:w-auto">
+                    <option value="movie">Movies</option>
+                    <option value="tv">TV Shows</option>
+                </select>
+                <button id="watchlist-button-nav" class="btn btn-secondary w-full sm:w-auto">My Watchlist</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="container py-8 flex-grow">
+        <div id="api-error-message" class="error-message hidden" role="alert" aria-live="assertive">
+            <p>Oops! Something went wrong.</p>
+            <p id="error-details"></p>
+        </div>
+
+        <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+            <div class="flex gap-3 w-full md:w-auto">
+                <button id="trending-movies-btn" class="btn btn-primary flex-grow md:flex-grow-0">Trending Movies</button>
+                <button id="trending-tv-btn" class="btn btn-secondary flex-grow md:flex-grow-0">Trending TV Shows</button>
+            </div>
+            <div class="w-full md:w-auto">
+                <select id="genre-filter"
+                        class="p-3 rounded-lg bg-gray-700 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-100 w-full">
+                    <option value="">All Genres</option>
+                </select>
+            </div>
+        </div>
+
+        <div id="loading-indicator" class="loading-indicator hidden" aria-live="polite" aria-busy="true">
+            <div class="spinner"></div>
+            <span>Loading content...</span>
+        </div>
+
+        <div id="content-display" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            <!-- Movie/TV show cards will be loaded here -->
+        </div>
+
+        <!-- Intersection Observer target for infinite scrolling -->
+        <div id="infinity-scroll-trigger" class="h-1 bg-transparent mt-8"></div>
+
+        <div id="no-results" class="text-center text-gray-400 text-xl py-16 hidden">
+            No results found. Please try a different search or filter.
+        </div>
+
+        <div id="watchlist-view" class="hidden">
+            <h2 class="text-3xl font-bold text-blue-400 mb-6">My Watchlist</h2>
+            <button id="back-to-home-btn" class="btn btn-secondary mb-6">← Back to Explorer</button>
+            <div id="watchlist-content" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                <!-- Watchlist items will be loaded here -->
+            </div>
+            <div id="empty-watchlist" class="text-center text-gray-400 text-xl py-16 hidden">
+                Your watchlist is empty. Add some movies or TV shows!
+            </div>
+        </div>
+    </main>
+
+    <!-- Movie/TV Show Detail Modal -->
+    <div id="detail-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+        <div class="modal-content">
+            <button class="close-button" aria-label="Close modal">&times;</button>
+            <img id="modal-poster" src="" alt="Poster" class="modal-poster">
+            <div class="modal-details">
+                <h3 id="modal-title" class="modal-title"></h3>
+                <p id="modal-release-date" class="text-gray-400 text-sm mb-2"></p>
+                <p id="modal-rating" class="modal-rating">
+                    <svg class="w-5 h-5 text-yellow-400 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.683-1.539 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.565-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.462a1 1 0 00.95-.69l1.07-3.292z"></path>
+                    </svg>
+                    <span id="modal-vote-average"></span> / 10
+                </p>
+                <p id="modal-genres" class="text-gray-400 text-sm mb-4"></p>
+                <p id="modal-overview" class="modal-overview"></p>
+                <div id="modal-trailer-embed" class="modal-trailer-container hidden">
+                    <!-- YouTube iframe will be embedded here -->
+                </div>
+                <div class="flex flex-col sm:flex-row gap-4 mt-auto">
+                    <button id="modal-watchlist-btn" class="btn watchlist-button flex-grow sm:flex-grow-0">Add to Watchlist</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // IMPORTANT: Replace 'YOUR_TMDB_API_KEY' with your actual TMDB API key.
+        // You can get one from https://www.themoviedb.org/documentation/api
+        const API_KEY = '487b673b7c2a58a8fbecf7b49a2db0d9';
+        const BASE_URL = 'https://api.themoviedb.org/3';
+        const IMAGE_BASE_URL = 'https://image.tmdb.org/t/p/'; // Base URL for TMDB images
+        const YOUTUBE_EMBED_URL = 'https://www.youtube.com/embed/';
+
+        // DOM Elements
+        const searchInput = document.getElementById('search-input');
+        const searchButton = document.getElementById('search-button');
+        const mediaTypeSelect = document.getElementById('media-type-select');
+        const trendingMoviesBtn = document.getElementById('trending-movies-btn');
+        const trendingTvBtn = document.getElementById('trending-tv-btn');
+        const genreFilter = document.getElementById('genre-filter');
+        const contentDisplay = document.getElementById('content-display');
+        const infinityScrollTrigger = document.getElementById('infinity-scroll-trigger');
+        const noResults = document.getElementById('no-results');
+        const watchlistButtonNav = document.getElementById('watchlist-button-nav');
+        const watchlistView = document.getElementById('watchlist-view');
+        const watchlistContent = document.getElementById('watchlist-content');
+        const emptyWatchlist = document.getElementById('empty-watchlist');
+        const backToHomeBtn = document.getElementById('back-to-home-btn');
+        const loadingIndicator = document.getElementById('loading-indicator');
+        const apiErrorMessage = document.getElementById('api-error-message');
+        const errorDetails = document.getElementById('error-details');
+
+        // Modal Elements
+        const detailModal = document.getElementById('detail-modal');
+        const closeButton = detailModal.querySelector('.close-button');
+        const modalPoster = document.getElementById('modal-poster');
+        const modalTitle = document.getElementById('modal-title');
+        const modalReleaseDate = document.getElementById('modal-release-date');
+        const modalRating = document.getElementById('modal-rating');
+        const modalVoteAverage = document.getElementById('modal-vote-average');
+        const modalGenres = document.getElementById('modal-genres');
+        const modalOverview = document.getElementById('modal-overview');
+        const modalTrailerEmbed = document.getElementById('modal-trailer-embed');
+        const modalWatchlistBtn = document.getElementById('modal-watchlist-btn');
+
+        // State variables
+        let currentPage = 1;
+        let totalPages = 1; // Track total pages for infinite scroll
+        let currentMediaType = 'movie'; // 'movie' or 'tv'
+        let currentSearchQuery = '';
+        let currentGenreId = '';
+        let isSearching = false;
+        let isLoading = false; // Prevent multiple fetches during infinite scroll
+        let genres = { movie: [], tv: [] };
+        let currentDetailItem = null; // Stores the item currently displayed in the modal
+        let lastFocusedElement = null; // For accessibility: store element that opened the modal
+
+        // Intersection Observer for infinite scrolling
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting && !isLoading && currentPage < totalPages) {
+                    loadMore();
+                }
+            });
+        }, {
+            root: null, // viewport
+            rootMargin: '0px',
+            threshold: 0.1 // Trigger when 10% of the target is visible
+        });
+
+        // --- Utility Functions ---
+
+        /**
+         * Displays an error message in the UI.
+         * @param {string} message - The error message to display.
+         */
+        function showErrorMessage(message) {
+            errorDetails.textContent = message;
+            apiErrorMessage.classList.remove('hidden');
+        }
+
+        /**
+         * Hides the error message.
+         */
+        function hideErrorMessage() {
+            apiErrorMessage.classList.add('hidden');
+            errorDetails.textContent = '';
+        }
+
+        /**
+         * Shows the loading indicator.
+         */
+        function showLoadingIndicator() {
+            loadingIndicator.classList.remove('hidden');
+            isLoading = true;
+        }
+
+        /**
+         * Hides the loading indicator.
+         */
+        function hideLoadingIndicator() {
+            loadingIndicator.classList.add('hidden');
+            isLoading = false;
+        }
+
+        /**
+         * Generates srcset attribute for responsive images.
+         * @param {string} posterPath - The path to the poster image.
+         * @returns {string} - The srcset string.
+         */
+        function getSrcset(posterPath) {
+            if (!posterPath) return '';
+            const sizes = ['w92', 'w154', 'w185', 'w342', 'w500', 'w780'];
+            return sizes.map(size => `${IMAGE_BASE_URL}${size}${posterPath} ${size.substring(1)}w`).join(', ');
+        }
+
+        /**
+         * Fetches data from the TMDB API.
+         * @param {string} endpoint - The API endpoint (e.g., '/trending/movie/week').
+         * @param {object} params - Query parameters.
+         * @returns {Promise<object>} - The JSON response from the API.
+         */
+        async function fetchData(endpoint, params = {}) {
+            showLoadingIndicator();
+            hideErrorMessage(); // Clear previous errors
+            const url = new URL(`${BASE_URL}${endpoint}`);
+            url.searchParams.append('api_key', API_KEY);
+            for (const key in params) {
+                if (params[key]) { // Only append if value is not empty/null
+                    url.searchParams.append(key, params[key]);
+                }
+            }
+            try {
+                const response = await fetch(url);
+                if (!response.ok) {
+                    let errorMessageText = `HTTP error! Status: ${response.status}`;
+                    if (response.status === 401) {
+                        errorMessageText += ". Please check your TMDB API key.";
+                    } else if (response.status === 404) {
+                        errorMessageText += ". Resource not found.";
+                    }
+                    throw new Error(errorMessageText);
+                }
+                const data = await response.json();
+                totalPages = data.total_pages || 1; // Update total pages
+                return data;
+            } catch (error) {
+                console.error('Error fetching data:', error);
+                showErrorMessage(`Failed to load content: ${error.message}`);
+                return null;
+            } finally {
+                hideLoadingIndicator();
+            }
+        }
+
+        /**
+         * Renders movie/TV show cards to the DOM.
+         * @param {Array<object>} items - Array of movie/TV show objects.
+         * @param {HTMLElement} container - The DOM element to append cards to.
+         * @param {boolean} clearExisting - Whether to clear existing content in the container.
+         */
+        function renderCards(items, container, clearExisting = false) {
+            if (clearExisting) {
+                container.innerHTML = '';
+            }
+
+            if (items.length === 0 && clearExisting) {
+                noResults.classList.remove('hidden');
+                // loadMoreBtn.classList.add('hidden'); // No longer needed for infinite scroll
+                return;
+            } else {
+                noResults.classList.add('hidden');
+            }
+
+            items.forEach(item => {
+                const posterPath = item.poster_path;
+                const fullPosterUrl = posterPath ? `${IMAGE_BASE_URL}w500${posterPath}` : 'https://placehold.co/500x750/334155/E2E8F0?text=No+Poster';
+                const srcset = getSrcset(posterPath);
+                const title = item.title || item.name || 'Untitled';
+                const releaseDate = item.release_date || item.first_air_date;
+                const displayYear = releaseDate ? new Date(releaseDate).getFullYear() : 'N/A';
+                const voteAverage = item.vote_average ? item.vote_average.toFixed(1) : 'N/A';
+                const overview = item.overview || 'No overview available.';
+
+                // Ensure item.media_type is set for watchlist consistency
+                item.media_type = item.media_type || currentMediaType;
+
+                const card = document.createElement('div');
+                card.className = 'movie-card shadow-lg';
+                // Store the full item data as a JSON string in a data attribute
+                const itemJson = encodeURIComponent(JSON.stringify(item));
+
+                card.innerHTML = `
+                    <img src="${fullPosterUrl}" srcset="${srcset}" sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw" alt="${title} Poster" class="w-full h-80 object-cover rounded-t-xl">
+                    <div class="movie-card-content flex flex-col flex-grow">
+                        <h3 class="movie-card-title text-blue-300">${title} (${displayYear})</h3>
+                        <p class="movie-card-rating">
+                            <svg class="w-4 h-4 text-yellow-400 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.683-1.539 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.565-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.462a1 1 0 00.95-.69l1.07-3.292z"></path>
+                            </svg>
+                            ${voteAverage}
+                        </p>
+                        <p class="movie-card-overview">${overview}</p>
+                        <button class="btn watchlist-button mt-auto" data-item="${itemJson}" aria-label="${isItemInWatchlist(item.id, item.media_type) ? 'Remove from Watchlist' : 'Add to Watchlist'}">
+                            ${isItemInWatchlist(item.id, item.media_type) ? 'Remove from Watchlist' : 'Add to Watchlist'}
+                        </button>
+                    </div>
+                `;
+                card.onclick = (e) => {
+                    // Prevent opening modal if watchlist button was clicked
+                    if (!e.target.classList.contains('watchlist-button') && !e.target.classList.contains('remove-watchlist-button')) {
+                        lastFocusedElement = document.activeElement; // Store for accessibility
+                        showDetailModal(item);
+                    }
+                };
+                container.appendChild(card);
+            });
+            // No longer need to manage loadMoreBtn visibility with infinite scroll
+        }
+
+        /**
+         * Fetches and populates the genre filter dropdown.
+         * @param {string} type - 'movie' or 'tv'.
+         */
+        async function populateGenreFilter(type) {
+            if (genres[type].length === 0) {
+                const data = await fetchData(`/genre/${type}/list`);
+                if (data && data.genres) {
+                    genres[type] = data.genres;
+                }
+            }
+
+            genreFilter.innerHTML = '<option value="">All Genres</option>';
+            genres[type].forEach(genre => {
+                const option = document.createElement('option');
+                option.value = genre.id;
+                option.textContent = genre.name;
+                genreFilter.appendChild(option);
+            });
+            genreFilter.value = currentGenreId; // Set previously selected genre if any
+        }
+
+        // --- Main Content Loading Functions ---
+
+        /**
+         * Loads trending movies or TV shows.
+         * @param {string} type - 'movie' or 'tv'.
+         * @param {boolean} clearExisting - Whether to clear existing content.
+         */
+        async function loadTrending(type, clearExisting = true) {
+            if (clearExisting) {
+                currentPage = 1;
+                currentSearchQuery = '';
+                currentGenreId = '';
+                isSearching = false;
+                genreFilter.value = ''; // Reset genre filter
+                observer.unobserve(infinityScrollTrigger); // Disconnect observer during initial load
+            }
+
+            currentMediaType = type;
+            // Update active button styling
+            if (type === 'movie') {
+                trendingMoviesBtn.classList.replace('btn-secondary', 'btn-primary');
+                trendingTvBtn.classList.replace('btn-primary', 'btn-secondary');
+            } else {
+                trendingTvBtn.classList.replace('btn-secondary', 'btn-primary');
+                trendingMoviesBtn.classList.replace('btn-primary', 'btn-secondary');
+            }
+            mediaTypeSelect.value = type; // Sync media type select
+
+            await populateGenreFilter(type);
+
+            const data = await fetchData(`/trending/${type}/week`, { page: currentPage });
+            if (data && data.results) {
+                renderCards(data.results, contentDisplay, clearExisting);
+            }
+            observer.observe(infinityScrollTrigger); // Reconnect observer after initial load
+        }
+
+        /**
+         * Performs a search for movies or TV shows.
+         * @param {string} query - The search query.
+         * @param {string} type - 'movie' or 'tv'.
+         * @param {boolean} clearExisting - Whether to clear existing content.
+         */
+        async function performSearch(query, type, clearExisting = true) {
+            if (clearExisting) {
+                currentPage = 1;
+                currentGenreId = '';
+                genreFilter.value = ''; // Reset genre filter
+                observer.unobserve(infinityScrollTrigger); // Disconnect observer during initial load
+            }
+            currentSearchQuery = query;
+            currentMediaType = type;
+            isSearching = true;
+
+            // Reset trending button styling
+            trendingMoviesBtn.classList.replace('btn-primary', 'btn-secondary');
+            trendingTvBtn.classList.replace('btn-primary', 'btn-secondary');
+            mediaTypeSelect.value = type; // Sync media type select
+
+            await populateGenreFilter(type);
+
+            const data = await fetchData(`/search/${type}`, { query: query, page: currentPage });
+            if (data && data.results) {
+                renderCards(data.results, contentDisplay, clearExisting);
+            }
+            observer.observe(infinityScrollTrigger); // Reconnect observer after initial load
+        }
+
+        /**
+         * Filters content by genre.
+         * @param {string} genreId - The ID of the selected genre.
+         * @param {string} type - 'movie' or 'tv'.
+         * @param {boolean} clearExisting - Whether to clear existing content.
+         */
+        async function filterByGenre(genreId, type, clearExisting = true) {
+            if (clearExisting) {
+                currentPage = 1;
+                observer.unobserve(infinityScrollTrigger); // Disconnect observer during initial load
+            }
+            currentGenreId = genreId;
+            currentMediaType = type;
+
+            let data;
+            if (isSearching && currentSearchQuery) {
+                // If currently searching, apply genre filter to search results
+                data = await fetchData(`/search/${type}`, { query: currentSearchQuery, page: currentPage });
+            } else {
+                // Otherwise, apply genre filter to discover results
+                data = await fetchData(`/discover/${type}`, {
+                    page: currentPage,
+                    with_genres: genreId // TMDB uses 'with_genres' for filtering
+                });
+            }
+
+            let filteredResults = data && data.results ? data.results : [];
+
+            if (genreId) {
+                // If filtering by genre, ensure results actually contain that genre
+                filteredResults = filteredResults.filter(item => item.genre_ids && item.genre_ids.includes(parseInt(genreId)));
+            }
+
+            renderCards(filteredResults, contentDisplay, clearExisting);
+            observer.observe(infinityScrollTrigger); // Reconnect observer after initial load
+        }
+
+        /**
+         * Handles the "Load More" action for infinite scrolling.
+         */
+        async function loadMore() {
+            if (currentPage < totalPages) {
+                currentPage++;
+                if (isSearching && currentSearchQuery) {
+                    await performSearch(currentSearchQuery, currentMediaType, false);
+                } else if (currentGenreId) {
+                    await filterByGenre(currentGenreId, currentMediaType, false);
+                } else {
+                    await loadTrending(currentMediaType, false);
+                }
+            } else {
+                // If no more pages, disconnect observer
+                observer.unobserve(infinityScrollTrigger);
+            }
+        }
+
+        // --- Watchlist Functions ---
+
+        /**
+         * Gets the watchlist from local storage.
+         * @returns {Array<object>} - Array of watchlist items.
+         */
+        function getWatchlist() {
+            const watchlist = localStorage.getItem('myWatchlist');
+            return watchlist ? JSON.parse(watchlist) : [];
+        }
+
+        /**
+         * Saves the watchlist to local storage.
+         * @param {Array<object>} watchlist - Array of watchlist items to save.
+         */
+        function saveWatchlist(watchlist) {
+            localStorage.setItem('myWatchlist', JSON.stringify(watchlist));
+        }
+
+        /**
+         * Checks if an item is already in the watchlist.
+         * @param {number} id - The ID of the item.
+         * @param {string} mediaType - The media type ('movie' or 'tv').
+         * @returns {boolean} - True if the item is in the watchlist, false otherwise.
+         */
+        function isItemInWatchlist(id, mediaType) {
+            const watchlist = getWatchlist();
+            return watchlist.some(item => item.id === id && item.media_type === mediaType);
+        }
+
+        /**
+         * Adds or removes an item from the watchlist.
+         * @param {object} item - The movie/TV show object to add/remove.
+         */
+        function toggleWatchlistItem(item) {
+            let watchlist = getWatchlist();
+            const index = watchlist.findIndex(wlItem => wlItem.id === item.id && wlItem.media_type === item.media_type);
+
+            if (index > -1) {
+                // Item exists, remove it
+                watchlist.splice(index, 1);
+                console.log(`Removed ${item.title || item.name} from watchlist.`);
+            } else {
+                // Item does not exist, add it
+                watchlist.push(item);
+                console.log(`Added ${item.title || item.name} to watchlist.`);
+            }
+            saveWatchlist(watchlist);
+            updateWatchlistButtons(); // Update buttons on main page and modal
+            if (watchlistView.classList.contains('flex')) { // If watchlist view is active, re-render
+                displayWatchlist();
+            }
+        }
+
+        /**
+         * Updates the text of "Add to Watchlist" buttons on cards.
+         */
+        function updateWatchlistButtons() {
+            document.querySelectorAll('.watchlist-button').forEach(button => {
+                const itemData = button.dataset.item;
+                if (itemData) {
+                    // Decode the URI component before parsing the JSON string
+                    const item = JSON.parse(decodeURIComponent(itemData));
+                    if (isItemInWatchlist(item.id, item.media_type)) {
+                        button.textContent = 'Remove from Watchlist';
+                        button.classList.add('remove-watchlist-button');
+                        button.classList.remove('watchlist-button'); // Remove the green class
+                        button.setAttribute('aria-label', `Remove ${item.title || item.name} from Watchlist`);
+                    } else {
+                        button.textContent = 'Add to Watchlist';
+                        button.classList.remove('remove-watchlist-button');
+                        button.classList.add('watchlist-button'); // Add the green class
+                        button.setAttribute('aria-label', `Add ${item.title || item.name} to Watchlist`);
+                    }
+                }
+            });
+
+            // Update modal button if modal is open
+            if (currentDetailItem) {
+                if (isItemInWatchlist(currentDetailItem.id, currentDetailItem.media_type || currentMediaType)) {
+                    modalWatchlistBtn.textContent = 'Remove from Watchlist';
+                    modalWatchlistBtn.classList.add('remove-watchlist-button');
+                    modalWatchlistBtn.classList.remove('watchlist-button');
+                    modalWatchlistBtn.setAttribute('aria-label', `Remove ${currentDetailItem.title || currentDetailItem.name} from Watchlist`);
+                } else {
+                    modalWatchlistBtn.textContent = 'Add to Watchlist';
+                    modalWatchlistBtn.classList.remove('remove-watchlist-button');
+                    modalWatchlistBtn.classList.add('watchlist-button');
+                    modalWatchlistBtn.setAttribute('aria-label', `Add ${currentDetailItem.title || currentDetailItem.name} to Watchlist`);
+                }
+            }
+        }
+
+        /**
+         * Displays the watchlist content.
+         */
+        function displayWatchlist() {
+            hideAllContentSections();
+            watchlistView.classList.remove('hidden');
+            watchlistView.classList.add('flex', 'flex-col'); // Use flex to organize content
+
+            observer.unobserve(infinityScrollTrigger); // Stop observing when in watchlist view
+
+            const watchlist = getWatchlist();
+            if (watchlist.length === 0) {
+                watchlistContent.innerHTML = '';
+                emptyWatchlist.classList.remove('hidden');
+            } else {
+                emptyWatchlist.classList.add('hidden');
+                renderCards(watchlist, watchlistContent, true); // Clear and render watchlist items
+            }
+        }
+
+        /**
+         * Hides all main content sections to switch views.
+         */
+        function hideAllContentSections() {
+            contentDisplay.parentElement.classList.add('hidden'); // Hide main explorer content
+            // loadMoreBtn.classList.add('hidden'); // No longer needed
+            noResults.classList.add('hidden');
+            watchlistView.classList.add('hidden');
+            watchlistView.classList.remove('flex', 'flex-col');
+        }
+
+        /**
+         * Shows the main explorer content.
+         */
+        function showExplorerContent() {
+            hideAllContentSections();
+            contentDisplay.parentElement.classList.remove('hidden');
+            // loadMoreBtn.classList.remove('hidden'); // Load more button visibility handled by renderCards
+            if (contentDisplay.children.length === 0) {
+                noResults.classList.remove('hidden');
+            }
+            observer.observe(infinityScrollTrigger); // Restart observing when returning to explorer
+        }
+
+        // --- Detail Modal Functions ---
+
+        /**
+         * Shows the detail modal with information about a specific item.
+         * @param {object} item - The movie/TV show object.
+         */
+        async function showDetailModal(item) {
+            currentDetailItem = item; // Store the item for watchlist toggle
+            lastFocusedElement = document.activeElement; // Store the element that opened the modal for accessibility
+
+            const posterPath = item.poster_path;
+            const fullPosterUrl = posterPath ? `${IMAGE_BASE_URL}w500${posterPath}` : 'https://placehold.co/500x750/334155/E2E8F0?text=No+Poster';
+            const srcset = getSrcset(posterPath);
+
+            modalPoster.src = fullPosterUrl;
+            modalPoster.srcset = srcset;
+            modalPoster.sizes = "(max-width: 768px) 100vw, 40vw"; // Adjust sizes for modal poster
+            modalPoster.alt = `${item.title || item.name} Poster`;
+
+            modalTitle.textContent = item.title || item.name || 'Untitled';
+            modalReleaseDate.textContent = item.release_date ? `Release Date: ${item.release_date}` : (item.first_air_date ? `First Air Date: ${item.first_air_date}` : '');
+            modalVoteAverage.textContent = item.vote_average ? item.vote_average.toFixed(1) : 'N/A';
+            modalOverview.textContent = item.overview || 'No overview available.';
+
+            // Get genres for the modal
+            const itemGenres = (item.genre_ids || []).map(id => {
+                const genreList = genres[item.media_type || currentMediaType];
+                const genre = genreList.find(g => g.id === id);
+                return genre ? genre.name : '';
+            }).filter(name => name).join(', ');
+            modalGenres.textContent = itemGenres ? `Genres: ${itemGenres}` : '';
+
+            // Fetch and embed trailer
+            const videosData = await fetchData(`/${item.media_type || currentMediaType}/${item.id}/videos`);
+            const trailer = videosData && videosData.results ? videosData.results.find(video => video.type === 'Trailer' && video.site === 'YouTube') : null;
+
+            if (trailer) {
+                modalTrailerEmbed.innerHTML = `<iframe width="560" height="315" src="${YOUTUBE_EMBED_URL}${trailer.key}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
+                modalTrailerEmbed.classList.remove('hidden');
+            } else {
+                modalTrailerEmbed.innerHTML = ''; // Clear any previous embed
+                modalTrailerEmbed.classList.add('hidden');
+            }
+
+            // Update watchlist button in modal
+            updateWatchlistButtons(); // This will check currentDetailItem
+
+            detailModal.style.display = 'flex'; // Use flex to center
+            detailModal.setAttribute('aria-hidden', 'false');
+            closeButton.focus(); // Focus on the close button when modal opens
+        }
+
+        /**
+         * Hides the detail modal.
+         */
+        function hideDetailModal() {
+            detailModal.style.display = 'none';
+            detailModal.setAttribute('aria-hidden', 'true');
+            modalTrailerEmbed.innerHTML = ''; // Clear embedded trailer
+            currentDetailItem = null;
+            if (lastFocusedElement) {
+                lastFocusedElement.focus(); // Return focus to the element that opened the modal
+                lastFocusedElement = null;
+            }
+        }
+
+        // --- Event Listeners ---
+
+        // Search button click
+        searchButton.addEventListener('click', () => {
+            const query = searchInput.value.trim();
+            if (query) {
+                performSearch(query, mediaTypeSelect.value);
+            } else {
+                // If search input is empty, revert to trending
+                loadTrending(currentMediaType);
+            }
+        });
+
+        // Search input enter key
+        searchInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                searchButton.click();
+            }
+        });
+
+        // Media type select change
+        mediaTypeSelect.addEventListener('change', () => {
+            const query = searchInput.value.trim();
+            if (query) {
+                performSearch(query, mediaTypeSelect.value);
+            } else {
+                loadTrending(mediaTypeSelect.value);
+            }
+        });
+
+        // Trending Movies button click
+        trendingMoviesBtn.addEventListener('click', () => {
+            searchInput.value = ''; // Clear search input
+            loadTrending('movie');
+        });
+
+        // Trending TV Shows button click
+        trendingTvBtn.addEventListener('click', () => {
+            searchInput.value = ''; // Clear search input
+            loadTrending('tv');
+        });
+
+        // Genre filter change
+        genreFilter.addEventListener('change', () => {
+            filterByGenre(genreFilter.value, currentMediaType);
+        });
+
+        // Event delegation for watchlist buttons on dynamically created cards
+        contentDisplay.addEventListener('click', (e) => {
+            if (e.target.classList.contains('watchlist-button') || e.target.classList.contains('remove-watchlist-button')) {
+                const itemData = e.target.dataset.item;
+                if (itemData) {
+                    const itemToToggle = JSON.parse(decodeURIComponent(itemData)); // Decode before parsing
+                    toggleWatchlistItem(itemToToggle);
+                } else {
+                    console.error('Could not retrieve item data from button dataset.');
+                }
+            }
+        });
+
+        // Watchlist button in navigation click
+        watchlistButtonNav.addEventListener('click', displayWatchlist);
+
+        // Back to Home button click
+        backToHomeBtn.addEventListener('click', () => {
+            showExplorerContent();
+            // Re-load trending content to refresh the main view
+            if (currentSearchQuery) {
+                performSearch(currentSearchQuery, currentMediaType);
+            } else if (currentGenreId) {
+                filterByGenre(currentGenreId, currentMediaType);
+            } else {
+                loadTrending(currentMediaType);
+            }
+        });
+
+        // Modal close button
+        closeButton.addEventListener('click', hideDetailModal);
+
+        // Close modal when clicking outside
+        window.addEventListener('click', (event) => {
+            if (event.target === detailModal) {
+                hideDetailModal();
+            }
+        });
+
+        // Close modal with Escape key
+        window.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape' && detailModal.style.display === 'flex') {
+                hideDetailModal();
+            }
+        });
+
+        // Modal Watchlist button click
+        modalWatchlistBtn.addEventListener('click', () => {
+            if (currentDetailItem) {
+                toggleWatchlistItem(currentDetailItem);
+            }
+        });
+
+        // Initial load
+        window.onload = () => {
+            if (API_KEY === 'YOUR_TMDB_API_KEY') {
+                const errorMessageDiv = document.createElement('div');
+                errorMessageDiv.className = 'fixed inset-0 bg-red-800 bg-opacity-90 flex items-center justify-center p-4 text-white text-center text-2xl font-bold z-[9999]';
+                errorMessageDiv.innerHTML = `
+                    <div class="bg-red-900 p-8 rounded-lg shadow-xl">
+                        <p class="mb-4">🛑 TMDB API Key Missing! 🛑</p>
+                        <p>Please replace <code class="bg-red-700 p-1 rounded">YOUR_TMDB_API_KEY</code> in the JavaScript code with your actual TMDB API key.</p>
+                        <p class="mt-2 text-lg">You can get one from <a href="https://www.themoviedb.org/documentation/api" target="_blank" class="text-blue-300 underline hover:text-blue-200">themoviedb.org/documentation/api</a></p>
+                        <p class="mt-4 text-sm">The application will not function without a valid key.</p>
+                    </div>
+                `;
+                document.body.appendChild(errorMessageDiv);
+                console.error('TMDB API Key is missing. Please replace "YOUR_TMDB_API_KEY" with your actual key.');
+                return;
+            }
+            loadTrending('movie'); // Load trending movies by default
+        };
+
+    </script>
+</body>
+</html>
